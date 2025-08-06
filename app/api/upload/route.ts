@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createOpenAI } from '@ai-sdk/openai'
 import { generateText } from 'ai'
+import { t } from '@/lib/i18n'
 
 // 创建 AI 模型实例
 const ai = createOpenAI({
@@ -27,22 +28,13 @@ function parseMarkdown(content: string): string {
 }
 
 // RAG 知识库处理函数
-async function processKnowledgeBase(content: string, fileName: string): Promise<string> {
+async function processKnowledgeBase(content: string, fileName: string, language: 'zh' | 'en' = 'en'): Promise<string> {
   try {
     // 使用 AI 来提取和结构化知识内容
-    const prompt = `请分析以下内容并提取关键知识点，用于面试问答：
-
-文件名：${fileName}
-内容：
-${content}
-
-请提取以下信息：
-1. 主要技术概念和术语
-2. 重要的知识点和要点
-3. 可能出现的面试问题
-4. 相关的实际应用场景
-
-请以结构化的格式返回，便于后续面试使用。`
+    const prompt = t(language, 'aiPrompts.processKnowledgeBasePrompt', {
+      fileName,
+      content
+    });
 
     const response = await generateText({
       model: aiModel as any,
@@ -86,7 +78,7 @@ export async function POST(request: NextRequest) {
       
       // 如果是知识库文件，进行 RAG 处理
       if (type === 'knowledgeBase') {
-        processedContent = await processKnowledgeBase(processedContent, file.name)
+        processedContent = await processKnowledgeBase(processedContent, file.name, 'en')
       }
     } else if (file.name.endsWith('.txt')) {
       fileType = 'text'

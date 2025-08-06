@@ -5,7 +5,7 @@ import { t } from '@/lib/i18n';
 
 export async function POST(req: Request) {
   try {
-    const { messages, context, language = 'zh' } = await req.json();
+    const { messages, context, language = 'en' } = await req.json();
 
     // 创建 AI 模型实例
     const ai = createOpenAI({
@@ -46,54 +46,31 @@ export async function POST(req: Request) {
     });
 
     // 构建评估提示
-    let evaluationPrompt = `Please evaluate this interview as a professional interviewer.
+    const conversationHistory = messages.map((msg: any) => 
+      `${msg.role === 'user' ? (language === 'zh' ? '面试者' : 'Interviewee') : (language === 'zh' ? '面试官' : 'Interviewer')}: ${msg.content}`
+    ).join('\n');
 
-Interview conversation record:
-${messages.map((msg: any) => `${msg.role === 'user' ? 'Interviewee' : 'Interviewer'}: ${msg.content}`).join('\n')}`;
-
+    let jobDescriptionContext = '';
+    let resumeContext = '';
+    
     if (context) {
       if (context.jobDescription) {
-        evaluationPrompt += `\n\nJob Requirements:\n${context.jobDescription}`;
+        jobDescriptionContext = language === 'zh' 
+          ? `\n\n职位要求：\n${context.jobDescription}`
+          : `\n\nJob Requirements:\n${context.jobDescription}`;
       }
       if (context.resume) {
-        evaluationPrompt += `\n\nInterviewee Resume:\n${context.resume}`;
+        resumeContext = language === 'zh'
+          ? `\n\n面试者简历：\n${context.resume}`
+          : `\n\nInterviewee Resume:\n${context.resume}`;
       }
     }
 
-    evaluationPrompt += `\n\nPlease evaluate from the following dimensions (0-100 points):
-1. Technical Skills - Professional knowledge mastery
-2. Communication - Language organization and expression ability
-3. Problem Solving - Analysis and problem-solving ability
-4. Work Attitude - Positivity and responsibility
-5. Relevant Experience - Work experience matching
-
-Please provide specific scores, feedback suggestions, and hiring recommendations.`;
-
-    // 根据语言调整提示
-    if (language === 'zh') {
-      evaluationPrompt = `请作为专业面试官，对这次面试进行全面评估。
-
-面试对话记录：
-${messages.map((msg: any) => `${msg.role === 'user' ? '面试者' : '面试官'}: ${msg.content}`).join('\n')}`;
-
-      if (context) {
-        if (context.jobDescription) {
-          evaluationPrompt += `\n\n职位要求：\n${context.jobDescription}`;
-        }
-        if (context.resume) {
-          evaluationPrompt += `\n\n面试者简历：\n${context.resume}`;
-        }
-      }
-
-      evaluationPrompt += `\n\n请从以下维度进行评分（0-100分）：
-1. 技术能力 - 专业知识掌握程度
-2. 沟通表达 - 语言组织和表达能力
-3. 问题解决 - 分析和解决问题的能力
-4. 工作态度 - 积极性和责任心
-5. 相关经验 - 工作经验的匹配度
-
-请提供具体的评分、反馈建议和录用推荐。`;
-    }
+    const evaluationPrompt = t(language, 'aiPrompts.evaluationPrompt', {
+      conversationHistory,
+      jobDescriptionContext,
+      resumeContext
+    });
 
     // 使用结构化评估
     const result = await generateObject({

@@ -2,6 +2,7 @@ import { Agent, createTool } from '@mastra/core';
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 import { z } from 'zod';
+import { t } from './i18n';
 
 // 创建 AI 模型实例
 export const ai = createOpenAI({
@@ -102,7 +103,8 @@ export const generateQuestionTool = createTool({
     jobDescription: z.string().optional(),
     resume: z.string().optional(),
     questionType: z.string().optional().default('general'),
-    difficulty: z.string().optional().default('medium')
+    difficulty: z.string().optional().default('medium'),
+    language: z.string().optional().default('en')
   }),
   outputSchema: z.object({
     question: z.string(),
@@ -114,13 +116,13 @@ export const generateQuestionTool = createTool({
     })
   }),
   async execute({ context }) {
-    const { jobDescription, resume, questionType = 'general', difficulty = 'medium' } = context;
-    const prompt = `根据以下信息生成一个${difficulty}难度的${questionType}面试问题：
-
-职位描述：${jobDescription || '未提供'}
-简历内容：${resume || '未提供'}
-
-请生成一个具体、相关且具有挑战性的面试问题。`;
+    const { jobDescription, resume, questionType = 'general', difficulty = 'medium', language = 'en' } = context;
+    const prompt = t(language as 'zh' | 'en', 'aiPrompts.generateQuestionPrompt', {
+      difficulty,
+      questionType,
+      jobDescription: jobDescription || (language === 'zh' ? '未提供' : 'Not provided'),
+      resume: resume || (language === 'zh' ? '未提供' : 'Not provided')
+    });
 
     const response = await generateText({
       model: aiModel as any,
@@ -145,7 +147,8 @@ export const evaluateAnswerTool = createTool({
     answer: z.string(),
     jobDescription: z.string().optional(),
     criteria: z.array(z.string()).optional(),
-    isFirstAttempt: z.boolean().optional().default(true)
+    isFirstAttempt: z.boolean().optional().default(true),
+    language: z.string().optional().default('en')
   }),
   outputSchema: z.object({
     score: z.number(),
@@ -156,49 +159,28 @@ export const evaluateAnswerTool = createTool({
     accuracyRate: z.number()
   }),
   async execute({ context }) {
-    const { question, answer, jobDescription, criteria = [], isFirstAttempt = true } = context;
-    const defaultCriteria = [
+    const { question, answer, jobDescription, criteria = [], isFirstAttempt = true, language = 'en' } = context;
+    const defaultCriteria = language === 'zh' ? [
       '答案的完整性和逻辑性',
       '与职位要求的匹配度',
       '具体性和实例的使用',
       '专业性和技术深度'
+    ] : [
+      'Answer completeness and logic',
+      'Match with job requirements',
+      'Specificity and use of examples',
+      'Professionalism and technical depth'
     ];
 
     const evaluationCriteria = criteria.length > 0 ? criteria : defaultCriteria;
 
-    const prompt = `请评估以下面试答案并提供引导：
-
-问题：${question}
-答案：${answer}
-职位描述：${jobDescription || '未提供'}
-是否首次回答：${isFirstAttempt ? '是' : '否'}
-
-评估标准：${evaluationCriteria.join('、')}
-
-请从1-10分进行评分，评分标准：
-- 9-10分：回答完整、准确、有深度，包含具体例子，逻辑清晰
-- 7-8分：回答基本正确，有一定深度，但可能缺少具体例子
-- 5-6分：回答基本正确，但不够详细，缺乏具体例子
-- 3-4分：回答部分正确，但不够完整或有明显错误
-- 1-2分：回答错误或完全不相关
-
-请提供：
-1. 详细的反馈评价
-2. 如果回答不够完善，提供具体的引导提示（不要直接给出答案）
-3. 引导应该包括：
-   - 指出缺少的关键点
-   - 建议提供具体例子
-   - 引导从不同角度思考
-   - 鼓励更详细的说明
-
-请以JSON格式返回：
-{
-  "score": 分数,
-  "feedback": "反馈内容",
-  "guidance": "引导提示",
-  "needsImprovement": true/false,
-  "accuracyRate": 准确率百分比
-}`;
+    const prompt = t(language as 'zh' | 'en', 'aiPrompts.evaluateAnswerPrompt', {
+      question,
+      answer,
+      jobDescription: jobDescription || (language === 'zh' ? '未提供' : 'Not provided'),
+      isFirstAttempt: isFirstAttempt ? (language === 'zh' ? '是' : 'Yes') : (language === 'zh' ? '否' : 'No'),
+      evaluationCriteria: evaluationCriteria.join(language === 'zh' ? '、' : ', ')
+    });
 
     const response = await generateText({
       model: aiModel as any,
@@ -223,7 +205,7 @@ export const evaluateAnswerTool = createTool({
       return {
         score: score,
         feedback: response.text,
-        guidance: '请尝试提供更详细的回答，包括具体的例子和经历。',
+        guidance: language === 'zh' ? '请尝试提供更详细的回答，包括具体的例子和经历。' : 'Please try to provide more detailed answers, including specific examples and experiences.',
         needsImprovement: true,
         criteria: evaluationCriteria,
         accuracyRate: accuracyRate
@@ -357,7 +339,8 @@ export const trackInterviewProgressTool = createTool({
     questionCount: z.number(),
     recentScores: z.array(z.number()),
     jobDescription: z.string().optional(),
-    resume: z.string().optional()
+    resume: z.string().optional(),
+    language: z.string().optional().default('en')
   }),
   outputSchema: z.object({
     shouldTerminate: z.boolean(),
@@ -367,7 +350,7 @@ export const trackInterviewProgressTool = createTool({
     questionCount: z.number()
   }),
   async execute({ context }) {
-    const { conversationHistory, questionCount, recentScores, jobDescription, resume } = context;
+    const { conversationHistory, questionCount, recentScores, jobDescription, resume, language = 'en' } = context;
     
     // 计算准确率
     const averageScore = recentScores.length > 0 ? recentScores.reduce((a, b) => a + b, 0) / recentScores.length : 0;
@@ -376,23 +359,17 @@ export const trackInterviewProgressTool = createTool({
     // 判断是否应该终止
     const shouldTerminate = (accuracyRate >= 80 && questionCount >= 3) || questionCount >= 5;
     
-    const prompt = `请评估当前面试进度：
-
-面试对话：${conversationHistory}
+    const prompt = t(language as 'zh' | 'en', 'aiPrompts.evaluateProgressPrompt', {
+      conversationHistory: language === 'zh' ? `面试对话：${conversationHistory}
 问题数量：${questionCount}
 最近回答得分：${recentScores.join(', ')}
 平均准确率：${accuracyRate.toFixed(1)}%
-职位描述：${jobDescription || '未提供'}
-
-请判断是否应该终止当前面试，并说明原因。
-请以JSON格式返回：
-{
-  "shouldTerminate": true/false,
-  "reason": "终止原因",
-  "overallScore": 平均分数,
-  "accuracyRate": 准确率,
-  "questionCount": 问题数量
-}`;
+职位描述：${jobDescription || '未提供'}` : `Interview conversation: ${conversationHistory}
+Question count: ${questionCount}
+Recent answer scores: ${recentScores.join(', ')}
+Average accuracy rate: ${accuracyRate.toFixed(1)}%
+Job description: ${jobDescription || 'Not provided'}`
+    });
 
     const response = await generateText({
       model: aiModel as any,
@@ -403,7 +380,7 @@ export const trackInterviewProgressTool = createTool({
       const result = JSON.parse(response.text);
       return {
         shouldTerminate: result.shouldTerminate || shouldTerminate,
-        reason: result.reason || (shouldTerminate ? '用户表现良好，可以结束当前面试' : '继续面试'),
+        reason: result.reason || (shouldTerminate ? (language === 'zh' ? '用户表现良好，可以结束当前面试' : 'User performed well, can end current interview') : (language === 'zh' ? '继续面试' : 'Continue interview')),
         overallScore: result.overallScore || averageScore,
         accuracyRate: result.accuracyRate || accuracyRate,
         questionCount: result.questionCount || questionCount
@@ -411,7 +388,7 @@ export const trackInterviewProgressTool = createTool({
     } catch {
       return {
         shouldTerminate: shouldTerminate,
-        reason: shouldTerminate ? '用户表现良好，可以结束当前面试' : '继续面试',
+        reason: shouldTerminate ? (language === 'zh' ? '用户表现良好，可以结束当前面试' : 'User performed well, can end current interview') : (language === 'zh' ? '继续面试' : 'Continue interview'),
         overallScore: averageScore,
         accuracyRate: accuracyRate,
         questionCount: questionCount
@@ -560,62 +537,7 @@ export const summarizeInterviewTool = createTool({
 export const interviewAgent = new Agent({
   name: 'interview_assistant',
   description: '专业的面试助手，能够生成问题、评估答案、提供建议',
-  instructions: `你是一个专业的面试助手，具备以下能力：
-
-1. 根据职位描述和简历生成相关的面试问题
-2. 根据上传的题库内容生成相关的面试问题
-3. 评估候选人的答案质量
-4. 提供个性化的面试建议和改进方向
-5. 支持技术面试、行为面试等多种类型
-
-面试流程指导：
-- 当用户说"开始面试"时，热情地欢迎并出第一个问题
-- 每次只出一个面试问题，等待用户回答
-- 用户回答后，给予适当的反馈和评价
-- 当用户说"下一题"、"继续"、"下一个问题"等时，再出下一题
-- 如果用户上传了题库，优先从题库中出题，避免重复出题
-- 保持面试的节奏感，不要一次性出太多题
-
-智能终止和总结指导：
-- 持续跟踪用户的回答质量和准确率
-- 当满足以下任一条件时，主动终止当前面试并总结：
-  * 用户连续3个问题回答准确率达到85%以上
-  * 用户已经回答了5个以上问题且整体平均准确率达到80%以上
-  * 用户已经回答了8个以上问题（无论准确率如何）
-- 终止时应该：
-  * 首先祝贺用户完成当前面试轮次
-  * 总结用户的整体表现和亮点
-  * 指出需要改进的地方
-  * 提供具体的改进建议
-  * 鼓励用户继续练习
-  * 明确提示可以开始新的面试轮次
-- 总结应该包括：
-  * 回答的准确性和完整性
-  * 技术深度和广度
-  * 沟通表达能力
-  * 具体改进建议
-  * 整体评分和准确率
-
-回答评估和引导指导：
-- 当用户回答问题时，仔细评估回答的完整性和深度
-- 如果回答不够完善（如过于简短、缺乏具体例子、逻辑不清晰等），不要直接给出答案
-- 而是给出具体的提示和引导，帮助用户思考更深入
-- 提示应该包括：
-  * 指出回答中缺少的关键点
-  * 建议用户提供具体的例子或经历
-  * 引导用户从不同角度思考问题
-  * 鼓励用户展开更详细的说明
-- 只有当用户明确请求帮助或提示时，才提供更直接的指导
-- 保持鼓励和支持的态度，帮助用户建立信心
-
-面试状态跟踪：
-- 在每次回答后，评估回答质量并记录分数
-- 计算最近3个问题的平均准确率
-- 当准确率达到终止条件时，立即进行总结
-- 总结后明确告知用户可以开始新的面试轮次
-
-当用户上传了题库文件时，你应该优先使用题库内容来生成面试问题。
-请始终保持专业、友好和建设性的态度。`,
+  instructions: t('zh', 'aiPrompts.agentInstructions'),
   model: aiModel,
   tools: {
     generateQuestion: generateQuestionTool,
@@ -626,6 +548,24 @@ export const interviewAgent = new Agent({
     summarizeInterview: summarizeInterviewTool
   }
 });
+
+// 创建语言感知的面试代理
+export const createLanguageAwareInterviewAgent = (language: 'zh' | 'en' = 'en') => {
+  return new Agent({
+    name: 'interview_assistant',
+    description: language === 'zh' ? '专业的面试助手，能够生成问题、评估答案、提供建议' : 'Professional interview assistant that can generate questions, evaluate answers, and provide advice',
+    instructions: t(language, 'aiPrompts.agentInstructions'),
+    model: aiModel,
+    tools: {
+      generateQuestion: generateQuestionTool,
+      generateQuestionFromBank: generateQuestionFromBankTool,
+      evaluateAnswer: evaluateAnswerTool,
+      provideAdvice: provideAdviceTool,
+      shouldTerminateInterview: shouldTerminateInterviewTool,
+      summarizeInterview: summarizeInterviewTool
+    }
+  });
+};
 
 // 导出常用的工具函数
 export { aiModel as default }; 

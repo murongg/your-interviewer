@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { interviewAgent, createUserAI } from '@/lib/mastra';
+import { interviewAgent, createUserAI, createLanguageAwareInterviewAgent } from '@/lib/mastra';
+import { t } from '@/lib/i18n';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, context, language = 'zh', userSettings } = await req.json();
+    const { messages, context, language = 'en', userSettings } = await req.json();
     
     // 添加请求日志
     console.log('Chat API request received:', {
@@ -37,34 +38,22 @@ export async function POST(req: NextRequest) {
     }
 
     // 构建系统提示
-    const systemPrompt = `你是一个专业的面试助手，请提供有用的面试建议。当前语言：${language}
-
-回答评估和引导指导：
-- 当用户回答问题时，仔细评估回答的完整性和深度
-- 如果回答不够完善（如过于简短、缺乏具体例子、逻辑不清晰等），不要直接给出答案
-- 而是给出具体的提示和引导，帮助用户思考更深入
-- 提示应该包括：
-  * 指出回答中缺少的关键点
-  * 建议用户提供具体的例子或经历
-  * 引导用户从不同角度思考问题
-  * 鼓励用户展开更详细的说明
-- 只有当用户明确请求帮助或提示时，才提供更直接的指导
-- 保持鼓励和支持的态度，帮助用户建立信心`;
+    const systemPrompt = t(language, 'aiPrompts.systemPrompt');
 
     // 如果有上下文信息，添加到系统提示中
     let enhancedSystemPrompt = systemPrompt;
     if (context) {
       if (context.jobDescription) {
-        enhancedSystemPrompt += `\n\n职位描述：${context.jobDescription}`;
+        enhancedSystemPrompt += t(language, 'aiPrompts.jobDescriptionContext', { content: context.jobDescription });
       }
       if (context.resume) {
-        enhancedSystemPrompt += `\n\n简历信息：${context.resume}`;
+        enhancedSystemPrompt += t(language, 'aiPrompts.resumeContext', { content: context.resume });
       }
       if (context.interviewQuestions) {
-        enhancedSystemPrompt += `\n\n面试题库：${context.interviewQuestions}`;
+        enhancedSystemPrompt += t(language, 'aiPrompts.interviewQuestionsContext', { content: context.interviewQuestions });
       }
       if (context.knowledgeBase) {
-        enhancedSystemPrompt += `\n\n知识库内容：${context.knowledgeBase}`;
+        enhancedSystemPrompt += t(language, 'aiPrompts.knowledgeBaseContext', { content: context.knowledgeBase });
       }
     }
 
@@ -124,18 +113,18 @@ export async function POST(req: NextRequest) {
       // 根据不同的请求类型生成不同的提示
       let prompt = '';
       if (isStartingInterview) {
-        prompt = `欢迎开始面试！请基于以下题库内容生成第一个面试问题：${context.interviewQuestions}`;
+        prompt = t(language, 'aiPrompts.welcomeStartInterview', { content: context.interviewQuestions });
       } else if (isRequestingNextQuestion) {
-        prompt = `请基于以下题库内容生成一个新的面试问题，避免重复已使用的问题：${context.interviewQuestions}`;
+        prompt = t(language, 'aiPrompts.nextQuestionFromBank', { content: context.interviewQuestions });
       } else {
-        prompt = `请基于以下题库内容生成面试问题：${context.interviewQuestions}`;
+        prompt = t(language, 'aiPrompts.generateFromBank', { content: context.interviewQuestions });
       }
 
       console.log('Generating question from bank with prompt:', prompt);
 
       try {
         // 如果用户提供了设置，创建新的AI实例
-        let agentToUse = interviewAgent;
+        let agentToUse = createLanguageAwareInterviewAgent(language);
         if (userSettings?.apiKey) {
           const userAI = createUserAI(userSettings);
           const userModel = userAI('gpt-4o-mini');
@@ -144,10 +133,10 @@ export async function POST(req: NextRequest) {
           const { Agent } = await import('@mastra/core');
           agentToUse = new Agent({
             name: 'interview_assistant',
-            description: '专业的面试助手，能够生成问题、评估答案、提供建议',
-            instructions: interviewAgent.instructions,
+            description: language === 'zh' ? '专业的面试助手，能够生成问题、评估答案、提供建议' : 'Professional interview assistant that can generate questions, evaluate answers, and provide advice',
+            instructions: t(language, 'aiPrompts.agentInstructions'),
             model: userModel,
-            tools: interviewAgent.tools,
+            tools: createLanguageAwareInterviewAgent(language).tools,
           });
         }
 
@@ -182,7 +171,7 @@ export async function POST(req: NextRequest) {
         ];
 
         // 如果用户提供了设置，创建新的AI实例
-        let agentToUse = interviewAgent;
+        let agentToUse = createLanguageAwareInterviewAgent(language);
         if (userSettings?.apiKey) {
           const userAI = createUserAI(userSettings);
           const userModel = userAI('gpt-4o-mini');
@@ -191,10 +180,10 @@ export async function POST(req: NextRequest) {
           const { Agent } = await import('@mastra/core');
           agentToUse = new Agent({
             name: 'interview_assistant',
-            description: '专业的面试助手，能够生成问题、评估答案、提供建议',
-            instructions: interviewAgent.instructions,
+            description: language === 'zh' ? '专业的面试助手，能够生成问题、评估答案、提供建议' : 'Professional interview assistant that can generate questions, evaluate answers, and provide advice',
+            instructions: t(language, 'aiPrompts.agentInstructions'),
             model: userModel,
-            tools: interviewAgent.tools,
+            tools: createLanguageAwareInterviewAgent(language).tools,
           });
         }
 
@@ -221,7 +210,7 @@ export async function POST(req: NextRequest) {
 
     try {
       // 如果用户提供了设置，创建新的AI实例
-      let agentToUse = interviewAgent;
+      let agentToUse = createLanguageAwareInterviewAgent(language);
       if (userSettings?.apiKey) {
         const userAI = createUserAI(userSettings);
         const userModel = userAI('gpt-4o-mini');
@@ -230,10 +219,10 @@ export async function POST(req: NextRequest) {
         const { Agent } = await import('@mastra/core');
         agentToUse = new Agent({
           name: 'interview_assistant',
-          description: '专业的面试助手，能够生成问题、评估答案、提供建议',
-          instructions: interviewAgent.instructions,
+          description: language === 'zh' ? '专业的面试助手，能够生成问题、评估答案、提供建议' : 'Professional interview assistant that can generate questions, evaluate answers, and provide advice',
+          instructions: t(language, 'aiPrompts.agentInstructions'),
           model: userModel,
-          tools: interviewAgent.tools,
+          tools: createLanguageAwareInterviewAgent(language).tools,
         });
       }
 
