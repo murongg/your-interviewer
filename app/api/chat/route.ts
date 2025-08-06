@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
         let agentToUse = createLanguageAwareInterviewAgent(language);
         if (userSettings?.apiKey) {
           const userAI = createUserAI(userSettings);
-          const userModel = userAI('gpt-4o-mini');
+          const userModel = userAI(userSettings.model || 'gpt-4o-mini');
           
           // 创建使用用户API配置的agent
           const { Agent } = await import('@mastra/core');
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
         let agentToUse = createLanguageAwareInterviewAgent(language);
         if (userSettings?.apiKey) {
           const userAI = createUserAI(userSettings);
-          const userModel = userAI('gpt-4o-mini');
+          const userModel = userAI(userSettings.model || 'gpt-4o-mini');
           
           // 创建使用用户API配置的agent
           const { Agent } = await import('@mastra/core');
@@ -213,7 +213,7 @@ export async function POST(req: NextRequest) {
       let agentToUse = createLanguageAwareInterviewAgent(language);
       if (userSettings?.apiKey) {
         const userAI = createUserAI(userSettings);
-        const userModel = userAI('gpt-4o-mini');
+        const userModel = userAI(userSettings.model || 'gpt-4o-mini');
         
         // 创建使用用户API配置的agent
         const { Agent } = await import('@mastra/core');

@@ -28,6 +28,7 @@ export default function InterviewAssistant() {
   const [userSettings, setUserSettings] = useState<{
     baseURL?: string
     apiKey?: string
+    model?: string // 新增模型字段
   }>({})
 
   const { messages, input, append, status, error } = useChat({
@@ -95,7 +96,7 @@ export default function InterviewAssistant() {
   }
 
   // 处理设置变更
-  const handleSettingsChange = (settings: { baseURL: string; apiKey: string }) => {
+  const handleSettingsChange = (settings: { baseURL: string; apiKey: string; model?: string }) => {
     setUserSettings(settings)
   }
 

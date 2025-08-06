@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 interface SettingsConfig {
   baseURL: string
   apiKey: string
+  model?: string // 新增模型字段
 }
 
 interface SettingsDialogProps {
@@ -23,7 +24,8 @@ export function SettingsDialog({ language, onSettingsChange }: SettingsDialogPro
   const [isOpen, setIsOpen] = useState(false)
   const [settings, setSettings] = useState<SettingsConfig>({
     baseURL: '',
-    apiKey: ''
+    apiKey: '',
+    model: 'gpt-4o-mini', // 默认模型
   })
   const [showApiKey, setShowApiKey] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -34,7 +36,11 @@ export function SettingsDialog({ language, onSettingsChange }: SettingsDialogPro
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings)
-        setSettings(parsed)
+        setSettings({
+          baseURL: parsed.baseURL || '',
+          apiKey: parsed.apiKey || '',
+          model: parsed.model || 'gpt-4o-mini',
+        })
       } catch (error) {
         console.error('Failed to parse saved settings:', error)
       }
@@ -58,7 +64,8 @@ export function SettingsDialog({ language, onSettingsChange }: SettingsDialogPro
   const resetSettings = () => {
     setSettings({
       baseURL: '',
-      apiKey: ''
+      apiKey: '',
+      model: 'gpt-4o-mini',
     })
     localStorage.removeItem('interview-settings')
     toast.success(language === 'zh' ? '设置已重置' : 'Settings reset')
@@ -120,7 +127,9 @@ export function SettingsDialog({ language, onSettingsChange }: SettingsDialogPro
         enterApiKey: '请先输入API Key',
         connectionSuccess: '连接测试成功',
         connectionFailed: '连接测试失败',
-        saveFailed: '保存设置失败'
+        saveFailed: '保存设置失败',
+        model: '模型选择',
+        modelHelp: '选择用于对话的AI模型',
       },
       en: {
         title: 'API Settings',
@@ -142,7 +151,9 @@ export function SettingsDialog({ language, onSettingsChange }: SettingsDialogPro
         enterApiKey: 'Please enter API Key first',
         connectionSuccess: 'Connection test successful',
         connectionFailed: 'Connection test failed',
-        saveFailed: 'Failed to save settings'
+        saveFailed: 'Failed to save settings',
+        model: 'Model',
+        modelHelp: 'Select the AI model for conversation',
       }
     }
     return translations[language][key as keyof typeof translations.zh] || key
@@ -209,6 +220,25 @@ export function SettingsDialog({ language, onSettingsChange }: SettingsDialogPro
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500">{t('apiKeyHelp')}</p>
+              </div>
+
+              {/* 模型选择（可自定义输入） */}
+              <div className="space-y-2">
+                <Label htmlFor="model">{t('model')}</Label>
+                <input
+                  id="model"
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  list="model-options"
+                  value={settings.model}
+                  onChange={e => setSettings(prev => ({ ...prev, model: e.target.value }))}
+                  placeholder="gpt-4o-mini"
+                />
+                <datalist id="model-options">
+                  <option value="gpt-3.5-turbo" />
+                  <option value="gpt-4o-mini" />
+                  <option value="gpt-4o" />
+                </datalist>
+                <p className="text-xs text-gray-500">{t('modelHelp')}</p>
               </div>
 
               {/* 操作按钮 */}
