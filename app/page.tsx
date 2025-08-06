@@ -1,7 +1,7 @@
 'use client'
 
 import { useChat } from '@ai-sdk/react'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,9 +12,9 @@ import { HelpCircle, MessageSquare, Lightbulb, RefreshCw, Upload, Settings, BarC
 import { FileUpload } from '@/components/file-upload'
 import { EvaluationReport } from '@/components/evaluation-report'
 import { LanguageSwitcher } from '@/components/language-switcher' // 导入新的 LanguageSwitcher
+import { MarkdownMessage } from '@/components/markdown-message'
 
 import { Language, t } from '@/lib/i18n'
-import { TextStreamChatTransport } from 'ai'
 
 export default function InterviewAssistant() {
   const [language, setLanguage] = useState<Language>('zh')
@@ -24,13 +24,31 @@ export default function InterviewAssistant() {
     jobDescription?: string
   }>({})
 
-  const { messages, sendMessage, status } = useChat({
-    transport: new TextStreamChatTransport({
-      api: '/api/chat',
-      body: { context, language }
-    }),
-  })
-  const isLoading = useMemo(() => status === 'streaming', [status])
+  const { messages, input, append, status } = useChat({
+    api: '/api/chat',
+    body: { context, language },
+    streamProtocol: 'text'
+  })  
+
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  const isLoading = useMemo(() => {
+    return status === 'streaming'
+  }, [status])
+
+  // 自动滚动到底部
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollElement) {
+        // 使用平滑滚动效果
+        scrollElement.scrollTo({
+          top: scrollElement.scrollHeight,
+          behavior: 'smooth'
+        })
+      }
+    }
+  }, [messages, isLoading])
 
   const [inputValue, setInputValue] = useState('')
   const [showUpload, setShowUpload] = useState(false)
@@ -55,6 +73,21 @@ export default function InterviewAssistant() {
   
   // 快捷回复选项
   const quickReplies = [
+    // 添加基于题库生成问题的快捷回复（优先显示）
+    ...(context.interviewQuestions ? [
+      // 第一次出题的快捷回复
+      {
+        text: t(language, 'quickReplies.startInterview'),
+        icon: MessageSquare,
+        variant: "default" as const
+      },
+      // 下一题的快捷回复
+      {
+        text: t(language, 'quickReplies.nextQuestionFromBank'),
+        icon: MessageSquare,
+        variant: "outline" as const
+      }
+    ] : []),
     {
       text: t(language, 'quickReplies.helpAnswer'),
       icon: HelpCircle,
@@ -63,6 +96,11 @@ export default function InterviewAssistant() {
     {
       text: t(language, 'quickReplies.getIdeas'),
       icon: Lightbulb,
+      variant: "outline" as const
+    },
+    {
+      text: t(language, 'quickReplies.needHint'),
+      icon: HelpCircle,
       variant: "outline" as const
     },
     {
@@ -92,7 +130,14 @@ export default function InterviewAssistant() {
     const message = inputValue.trim()
     setInputValue('')
     
-    await sendMessage({ text: message })
+    // 使用 handleSubmit 来发送消息
+    const formData = new FormData()
+    formData.append('message', message)
+
+    await append({
+      role: 'user',
+      content: message
+    })
   }
 
   const handleFilesUploaded = (newContext: typeof context) => {
@@ -172,16 +217,7 @@ export default function InterviewAssistant() {
                 <FileUpload language={language} onFilesUploaded={handleFilesUploaded} />
               </DialogContent>
             </Dialog>
-
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open('/mastra', '_blank')}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Mastra AI 功能
-            </Button>
-
+            
             <Button 
               variant="outline" 
               size="sm" 
@@ -195,7 +231,7 @@ export default function InterviewAssistant() {
         </div>
 
         <Card className="h-[70vh] flex flex-col">
-          <CardHeader className="border-b">
+          <CardHeader className="border-b flex-shrink-0">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Avatar className="w-8 h-8">
@@ -213,8 +249,8 @@ export default function InterviewAssistant() {
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="flex-1 p-0">
-            <ScrollArea className="h-full p-4">
+          <CardContent className="flex-1 p-0 overflow-hidden">
+            <ScrollArea ref={scrollAreaRef} className="h-full p-4">
               {messages.length === 0 && (
                 <div className="text-center text-gray-500 mt-8">
                   <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -229,47 +265,55 @@ export default function InterviewAssistant() {
               
               {messages.map(message => (
                 <div key={message.id} className={`mb-6 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                  <div className="flex items-start gap-3">
-                    {message.role === 'assistant' && (
-                      <Avatar className="w-8 h-8 mt-1">
+                  {message.role === 'assistant' ? (
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-8 h-8 mt-1 flex-shrink-0">
                         <AvatarImage src="/placeholder.svg?height=32&width=32" />
                         <AvatarFallback>AI</AvatarFallback>
                       </Avatar>
-                    )}
-                    
-                    <div className={`max-w-[80%] ${message.role === 'user' ? 'order-first' : ''}`}>
-                      <div className={`p-4 rounded-lg ${
-                        message.role === 'user' 
-                          ? 'bg-blue-500 text-white ml-auto' 
-                          : 'bg-white border shadow-sm'
-                      }`}>
-                        <div className="whitespace-pre-wrap">
-                          {message.parts?.map((part, index) => 
-                            part.type === 'text' ? part.text : ''
-                          ).join('')}
+                      
+                      <div className="max-w-[80%]">
+                        <div className="p-4 rounded-lg bg-white border shadow-sm">
+                          <MarkdownMessage 
+                            content={message.parts?.map((part, index) => 
+                              part.type === 'text' ? part.text : ''
+                            ).join('') || ''}
+                            className="prose prose-sm max-w-none"
+                          />
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 text-left">
+                          {t(language, 'main.aiInterviewer')}
                         </div>
                       </div>
-                      <div className={`text-xs text-gray-500 mt-1 ${
-                        message.role === 'user' ? 'text-right' : 'text-left'
-                      }`}>
-                        {message.role === 'user' ? t(language, 'main.you') : t(language, 'main.aiInterviewer')}
-                      </div>
                     </div>
-
-                    {message.role === 'user' && (
-                      <Avatar className="w-8 h-8 mt-1">
+                  ) : (
+                    <div className="flex items-start gap-3 justify-end">
+                      <div className="max-w-[80%] text-right">
+                        <div className="p-4 rounded-lg bg-blue-500 text-white">
+                          <div className="whitespace-pre-wrap">
+                            {message.parts?.map((part, index) => 
+                              part.type === 'text' ? part.text : ''
+                            ).join('')}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 text-right">
+                          {t(language, 'main.you')}
+                        </div>
+                      </div>
+                      
+                      <Avatar className="w-8 h-8 mt-1 flex-shrink-0">
                         <AvatarImage src="/placeholder.svg?height=32&width=32" />
                         <AvatarFallback>{language === 'zh' ? '我' : 'Me'}</AvatarFallback>
                       </Avatar>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
               
               {isLoading && (
                 <div className="text-left mb-6">
                   <div className="flex items-start gap-3">
-                    <Avatar className="w-8 h-8 mt-1">
+                    <Avatar className="w-8 h-8 mt-1 flex-shrink-0">
                       <AvatarImage src="/placeholder.svg?height=32&width=32" />
                       <AvatarFallback>AI</AvatarFallback>
                     </Avatar>
@@ -287,7 +331,7 @@ export default function InterviewAssistant() {
             </ScrollArea>
           </CardContent>
 
-          <CardFooter className="border-t bg-gray-50 flex-col gap-4">
+          <CardFooter className="border-t bg-gray-50 flex-col gap-4 flex-shrink-0">
             {/* 快捷回复按钮 */}
             <div className="w-full">
               <div className="text-sm text-gray-600 mb-2">{t(language, 'main.quickReplies')}</div>

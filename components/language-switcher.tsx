@@ -12,13 +12,8 @@ interface LanguageSwitcherProps {
 }
 
 export function LanguageSwitcher({ currentLang, onLanguageChange }: LanguageSwitcherProps) {
-  const router = useRouter()
-  const pathname = usePathname()
-
   const handleLanguageChange = (newLang: Language) => {
     onLanguageChange(newLang)
-    const newPath = `/${newLang}${pathname.substring(3)}` // /zh/path -> /en/path
-    router.push(newPath)
   }
 
   return (

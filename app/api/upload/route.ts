@@ -1,4 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createOpenAI } from '@ai-sdk/openai'
+import { generateText } from 'ai'
+
+// 创建 AI 模型实例
+const ai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY || '',
+  baseURL: process.env.OPENAI_BASE_URL,
+})
+const aiModel = ai('gpt-4o-mini')
+
+// 简单的 Markdown 解析函数
+function parseMarkdown(content: string): string {
+  // 移除 Markdown 标记，保留纯文本
+  return content
+    .replace(/^#+\s+/gm, '') // 移除标题标记
+    .replace(/\*\*(.*?)\*\*/g, '$1') // 移除粗体标记
+    .replace(/\*(.*?)\*/g, '$1') // 移除斜体标记
+    .replace(/`(.*?)`/g, '$1') // 移除代码标记
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 移除链接标记
+    .replace(/^\s*[-*+]\s+/gm, '') // 移除列表标记
+    .replace(/^\s*\d+\.\s+/gm, '') // 移除数字列表标记
+    .replace(/^\s*>/gm, '') // 移除引用标记
+    .replace(/^\s*\|.*\|.*$/gm, '') // 移除表格标记
+    .replace(/\n\s*\n/g, '\n') // 移除多余的空行
+    .trim()
+}
+
+// RAG 知识库处理函数
+async function processKnowledgeBase(content: string, fileName: string): Promise<string> {
+  try {
+    // 使用 AI 来提取和结构化知识内容
+    const prompt = `请分析以下内容并提取关键知识点，用于面试问答：
+
+文件名：${fileName}
+内容：
+${content}
+
+请提取以下信息：
+1. 主要技术概念和术语
+2. 重要的知识点和要点
+3. 可能出现的面试问题
+4. 相关的实际应用场景
+
+请以结构化的格式返回，便于后续面试使用。`
+
+    const response = await generateText({
+      model: aiModel as any,
+      prompt,
+    })
+
+    return response.text
+  } catch (error) {
+    console.error('RAG processing error:', error)
+    // 如果 AI 处理失败，返回原始内容
+    return content
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,9 +73,27 @@ export async function POST(request: NextRequest) {
 
     // 根据文件类型处理内容
     let processedContent = content
+    let fileType = 'txt'
+
     if (file.name.endsWith('.pdf')) {
       // 这里可以集成PDF解析库，暂时返回提示
       processedContent = '已上传PDF文件，内容解析功能开发中...'
+      fileType = 'pdf'
+    } else if (file.name.endsWith('.md')) {
+      // 处理 Markdown 文件
+      processedContent = parseMarkdown(content)
+      fileType = 'markdown'
+      
+      // 如果是知识库文件，进行 RAG 处理
+      if (type === 'knowledgeBase') {
+        processedContent = await processKnowledgeBase(processedContent, file.name)
+      }
+    } else if (file.name.endsWith('.txt')) {
+      fileType = 'text'
+    } else if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+      // 这里可以集成 Word 文档解析库
+      processedContent = '已上传 Word 文档，内容解析功能开发中...'
+      fileType = 'word'
     }
 
     return NextResponse.json({
@@ -26,7 +101,8 @@ export async function POST(request: NextRequest) {
       fileName: file.name,
       fileType: type,
       content: processedContent,
-      size: file.size
+      size: file.size,
+      type: type
     })
   } catch (error) {
     console.error('文件上传错误:', error)

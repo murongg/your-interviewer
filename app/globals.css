@@ -88,3 +88,96 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Markdown 样式 */
+.markdown-content {
+  @apply text-sm leading-relaxed;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  @apply font-semibold text-gray-900 mb-2;
+}
+
+.markdown-content h1 {
+  @apply text-lg;
+}
+
+.markdown-content h2 {
+  @apply text-base;
+}
+
+.markdown-content h3 {
+  @apply text-sm;
+}
+
+.markdown-content p {
+  @apply mb-2;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  @apply mb-2 pl-4;
+}
+
+.markdown-content li {
+  @apply mb-1;
+}
+
+.markdown-content code {
+  @apply bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono;
+}
+
+.markdown-content pre {
+  @apply bg-gray-100 rounded-md p-3 overflow-x-auto mb-2;
+}
+
+.markdown-content pre code {
+  @apply bg-transparent p-0;
+}
+
+.markdown-content blockquote {
+  @apply border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-2;
+}
+
+.markdown-content a {
+  @apply text-blue-600 hover:text-blue-800 underline;
+}
+
+.markdown-content table {
+  @apply w-full border-collapse border border-gray-300 mb-2;
+}
+
+.markdown-content th,
+.markdown-content td {
+  @apply border border-gray-300 px-2 py-1 text-xs;
+}
+
+.markdown-content th {
+  @apply bg-gray-100 font-semibold;
+}
+
+.markdown-content hr {
+  @apply border-gray-300 my-2;
+}
+
+/* 在用户消息中的markdown样式调整 */
+.bg-blue-500 .markdown-content {
+  @apply text-white;
+}
+
+.bg-blue-500 .markdown-content code {
+  @apply bg-blue-600 text-white;
+}
+
+.bg-blue-500 .markdown-content a {
+  @apply text-blue-200 hover:text-white;
+}
+
+.bg-blue-500 .markdown-content blockquote {
+  @apply border-blue-400 text-blue-100;
+}

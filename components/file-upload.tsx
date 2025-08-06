@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Upload, FileText, User, Briefcase, X, CheckCircle } from 'lucide-react'
+import { Upload, FileText, User, Briefcase, X, CheckCircle, FileCode } from 'lucide-react'
 import { Badge } from "@/components/ui/badge"
 import { Language, t } from '@/lib/i18n'
 
@@ -16,6 +16,7 @@ interface FileUploadProps {
     interviewQuestions?: string
     resume?: string
     jobDescription?: string
+    knowledgeBase?: string
   }) => void
 }
 
@@ -24,6 +25,7 @@ interface UploadedFile {
   type: string
   content: string
   size: number
+  fileType: string
 }
 
 export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
@@ -31,6 +33,7 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
     interviewQuestions?: UploadedFile
     resume?: UploadedFile
     jobDescription?: UploadedFile
+    knowledgeBase?: UploadedFile
   }>({})
   const [uploading, setUploading] = useState<string | null>(null)
 
@@ -57,7 +60,8 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
         name: result.fileName,
         type: result.fileType,
         content: result.content,
-        size: result.size
+        size: result.size,
+        fileType: result.fileType
       }
 
       const newUploadedFiles = {
@@ -77,6 +81,9 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
       }
       if (newUploadedFiles.jobDescription) {
         context.jobDescription = newUploadedFiles.jobDescription.content
+      }
+      if (newUploadedFiles.knowledgeBase) {
+        context.knowledgeBase = newUploadedFiles.knowledgeBase.content
       }
       
       onFilesUploaded(context)
@@ -104,6 +111,9 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
     }
     if (newUploadedFiles.jobDescription) {
       context.jobDescription = newUploadedFiles.jobDescription.content
+    }
+    if (newUploadedFiles.knowledgeBase) {
+      context.knowledgeBase = newUploadedFiles.knowledgeBase.content
     }
     
     onFilesUploaded(context)
@@ -140,6 +150,11 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
                   <span className="text-sm font-medium text-green-800">{file.name}</span>
+                  {file.fileType && (
+                    <Badge variant="outline" className="text-xs">
+                      {file.fileType.toUpperCase()}
+                    </Badge>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
@@ -194,20 +209,34 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
       </div>
 
       <Tabs defaultValue="questions" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="questions">{t(language, 'fileUpload.interviewQuestions')}</TabsTrigger>
           <TabsTrigger value="resume">{t(language, 'fileUpload.resume')}</TabsTrigger>
           <TabsTrigger value="job">{t(language, 'fileUpload.jobDescription')}</TabsTrigger>
+          <TabsTrigger value="knowledge">{t(language, 'fileUpload.knowledgeBase')}</TabsTrigger>
         </TabsList>
         
         <TabsContent value="questions" className="mt-4">
-          <FileUploadCard
-            type="interviewQuestions"
-            title={t(language, 'fileUpload.interviewQuestions')}
-            description={t(language, 'fileUpload.interviewQuestionsDesc')}
-            icon={FileText}
-            accept=".pdf,.md,.txt"
-          />
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-sm font-medium text-blue-800 mb-2">
+                {language === 'zh' ? '💡 题库功能说明' : '💡 Question Bank Feature'}
+              </h3>
+              <p className="text-sm text-blue-700">
+                {language === 'zh' 
+                  ? '上传题库文件后，AI面试官将基于题库内容生成相关面试题，提供更精准的面试体验。'
+                  : 'After uploading a question bank file, the AI interviewer will generate relevant interview questions based on the content, providing a more targeted interview experience.'
+                }
+              </p>
+            </div>
+            <FileUploadCard
+              type="interviewQuestions"
+              title={t(language, 'fileUpload.interviewQuestions')}
+              description={t(language, 'fileUpload.interviewQuestionsDesc')}
+              icon={FileText}
+              accept=".pdf,.md,.txt,.doc,.docx"
+            />
+          </div>
         </TabsContent>
         
         <TabsContent value="resume" className="mt-4">
@@ -216,7 +245,7 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
             title={t(language, 'fileUpload.resume')}
             description={t(language, 'fileUpload.resumeDesc')}
             icon={User}
-            accept=".pdf,.md,.txt"
+            accept=".pdf,.md,.txt,.doc,.docx"
           />
         </TabsContent>
         
@@ -226,7 +255,17 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
             title={t(language, 'fileUpload.jobDescription')}
             description={t(language, 'fileUpload.jobDescriptionDesc')}
             icon={Briefcase}
-            accept=".pdf,.md,.txt"
+            accept=".pdf,.md,.txt,.doc,.docx"
+          />
+        </TabsContent>
+
+        <TabsContent value="knowledge" className="mt-4">
+          <FileUploadCard
+            type="knowledgeBase"
+            title={t(language, 'fileUpload.knowledgeBase')}
+            description={t(language, 'fileUpload.knowledgeBaseDesc')}
+            icon={FileCode}
+            accept=".md,.txt,.pdf"
           />
         </TabsContent>
       </Tabs>
@@ -243,6 +282,9 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
             )}
             {uploadedFiles.jobDescription && (
               <Badge variant="outline" className="mr-2">{t(language, 'fileUpload.jobDescription')}: {uploadedFiles.jobDescription.name}</Badge>
+            )}
+            {uploadedFiles.knowledgeBase && (
+              <Badge variant="outline" className="mr-2">{t(language, 'fileUpload.knowledgeBase')}: {uploadedFiles.knowledgeBase.name}</Badge>
             )}
           </div>
         </div>

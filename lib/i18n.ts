@@ -44,7 +44,11 @@ export const translations = {
       helpAnswer: '请帮我回答并解释这个问题',
       getIdeas: '请给我一些回答这个问题的思路',
       nextQuestion: '我准备好下一个问题了',
-      restart: '请重新开始面试'
+      restart: '请重新开始面试',
+      generateFromBank: '基于题库出题',
+      nextQuestionFromBank: '下一题',
+      startInterview: '开始面试',
+      needHint: '我需要一些提示'
     },
     // 文件上传
     fileUpload: {
@@ -53,9 +57,11 @@ export const translations = {
       interviewQuestions: '面试题库',
       resume: '个人简历',
       jobDescription: '职位描述',
+      knowledgeBase: '知识库',
       interviewQuestionsDesc: '上传包含面试题目的PDF或Markdown文件',
       resumeDesc: '上传你的简历，AI将根据简历内容提出针对性问题',
       jobDescriptionDesc: '上传目标职位的JD，AI将根据职位要求进行面试',
+      knowledgeBaseDesc: '上传技术文档、知识库等Markdown文件，AI将基于这些内容进行智能问答',
       clickToUpload: '点击上传文件',
       uploading: '上传中...',
       uploadedFiles: '已上传文件：',
@@ -102,7 +108,8 @@ export const translations = {
 请用中文进行对话。`,
       interviewQuestionsContext: '\n\n面试题库内容：\n{content}\n请根据这些面试题来提问。',
       resumeContext: '\n\n候选人简历：\n{content}\n请根据简历内容提出针对性问题。',
-      jobDescriptionContext: '\n\n职位描述：\n{content}\n请根据职位要求提出相关问题。'
+      jobDescriptionContext: '\n\n职位描述：\n{content}\n请根据职位要求提出相关问题。',
+      knowledgeBaseContext: '\n\n知识库内容：\n{content}\n请基于这些知识内容进行面试问答。'
     },
     // Mastra 功能
     mastra: {
@@ -186,7 +193,11 @@ export const translations = {
       helpAnswer: 'Please help me answer and explain this question',
       getIdeas: 'Please give me some ideas for answering this question',
       nextQuestion: 'I\'m ready for the next question',
-      restart: 'Please restart the interview'
+      restart: 'Please restart the interview',
+      generateFromBank: 'Generate from Question Bank',
+      nextQuestionFromBank: 'Next Question',
+      startInterview: 'Start Interview',
+      needHint: 'I need some hints'
     },
     // File upload
     fileUpload: {
@@ -195,9 +206,11 @@ export const translations = {
       interviewQuestions: 'Interview Questions',
       resume: 'Resume',
       jobDescription: 'Job Description',
+      knowledgeBase: 'Knowledge Base',
       interviewQuestionsDesc: 'Upload PDF or Markdown files containing interview questions',
       resumeDesc: 'Upload your resume, AI will ask targeted questions based on your resume',
       jobDescriptionDesc: 'Upload target job description, AI will conduct interviews based on job requirements',
+      knowledgeBaseDesc: 'Upload technical documentation, knowledge base and other Markdown files, AI will conduct intelligent Q&A based on these contents',
       clickToUpload: 'Click to upload file',
       uploading: 'Uploading...',
       uploadedFiles: 'Uploaded files:',
@@ -244,7 +257,8 @@ export const translations = {
 Please communicate in English.`,
       interviewQuestionsContext: '\n\nInterview Questions Content:\n{content}\nPlease ask questions based on these interview questions.',
       resumeContext: '\n\nCandidate Resume:\n{content}\nPlease ask targeted questions based on the resume content.',
-      jobDescriptionContext: '\n\nJob Description:\n{content}\nPlease ask relevant questions based on the job requirements.'
+      jobDescriptionContext: '\n\nJob Description:\n{content}\nPlease ask relevant questions based on the job requirements.',
+      knowledgeBaseContext: '\n\nKnowledge Base Content:\n{content}\nPlease conduct interview Q&A based on these knowledge contents.'
     },
     // Mastra features
     mastra: {
