@@ -98,23 +98,27 @@ export default function InterviewAssistant() {
   const handleSettingsChange = (settings: { baseURL: string; apiKey: string }) => {
     setUserSettings(settings)
   }
+
+  const hasUploadedFiles = Object.keys(context).length > 0
   
   // 快捷回复选项
   const quickReplies = [
-    // 添加基于题库生成问题的快捷回复（优先显示）
-    ...(context.interviewQuestions ? [
+    // 添加基于上传文件的快捷回复（优先显示）
+    ...(hasUploadedFiles ? [
       // 第一次出题的快捷回复
       {
         text: t(language, 'quickReplies.startInterview'),
         icon: MessageSquare,
         variant: "default" as const
       },
-      // 下一题的快捷回复
-      {
-        text: t(language, 'quickReplies.nextQuestionFromBank'),
-        icon: MessageSquare,
-        variant: "outline" as const
-      }
+      // 如果有面试题库，显示下一题按钮
+      ...(context.interviewQuestions ? [
+        {
+          text: t(language, 'quickReplies.nextQuestionFromBank'),
+          icon: MessageSquare,
+          variant: "outline" as const
+        }
+      ] : [])
     ] : []),
     {
       text: t(language, 'quickReplies.helpAnswer'),
@@ -237,7 +241,6 @@ export default function InterviewAssistant() {
     }
   }
 
-  const hasUploadedFiles = Object.keys(context).length > 0
   const hasMessages = messages.length > 0
 
   return (
