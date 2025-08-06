@@ -8,6 +8,55 @@ export const ai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENAI_BASE_URL,
 })
+
+// 创建一个函数来获取用户设置的API配置
+export const getUserApiConfig = (userSettings?: { baseURL?: string; apiKey?: string }) => {
+  // 如果提供了用户设置，优先使用
+  if (userSettings?.apiKey) {
+    return {
+      apiKey: userSettings.apiKey,
+      baseURL: userSettings.baseURL || process.env.OPENAI_BASE_URL,
+    }
+  }
+
+  // 服务端环境，使用环境变量
+  if (typeof window === 'undefined') {
+    return {
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: process.env.OPENAI_BASE_URL,
+    }
+  }
+
+  // 客户端环境，从localStorage读取用户设置
+  try {
+    const savedSettings = localStorage.getItem('interview-settings')
+    if (savedSettings) {
+      const settings = JSON.parse(savedSettings)
+      return {
+        apiKey: settings.apiKey || process.env.OPENAI_API_KEY,
+        baseURL: settings.baseURL || process.env.OPENAI_BASE_URL,
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load user API settings:', error)
+  }
+
+  // 如果没有用户设置，使用环境变量
+  return {
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_BASE_URL,
+  }
+}
+
+// 创建一个函数来创建AI实例
+export const createUserAI = (userSettings?: { baseURL?: string; apiKey?: string }) => {
+  const config = getUserApiConfig(userSettings)
+  return createOpenAI({
+    apiKey: config.apiKey,
+    baseURL: config.baseURL,
+  })
+}
+
 const aiModel = ai('gpt-4o-mini')
 
 // Mastra 配置

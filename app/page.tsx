@@ -13,6 +13,8 @@ import { FileUpload } from '@/components/file-upload'
 import { EvaluationReport } from '@/components/evaluation-report'
 import { LanguageSwitcher } from '@/components/language-switcher' // 导入新的 LanguageSwitcher
 import { MarkdownMessage } from '@/components/markdown-message'
+import { SettingsDialog } from '@/components/settings-dialog'
+import { Toaster } from 'sonner'
 
 import { Language, t } from '@/lib/i18n'
 
@@ -23,11 +25,19 @@ export default function InterviewAssistant() {
     resume?: string
     jobDescription?: string
   }>({})
+  const [userSettings, setUserSettings] = useState<{
+    baseURL?: string
+    apiKey?: string
+  }>({})
 
-  const { messages, input, append, status } = useChat({
+  const { messages, input, append, status, error } = useChat({
     api: '/api/chat',
-    body: { context, language },
-    streamProtocol: 'text'
+    body: { context, language, userSettings },
+    streamProtocol: 'text',
+    onError: (error) => {
+      console.error('Chat error:', error);
+      // 可以在这里添加错误提示
+    }
   })  
 
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -65,10 +75,28 @@ export default function InterviewAssistant() {
     }
   }, [])
 
+  // 从localStorage加载用户设置
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('interview-settings')
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings)
+        setUserSettings(settings)
+      }
+    } catch (error) {
+      console.error('Failed to load user settings:', error)
+    }
+  }, [])
+
   // 保存语言设置到localStorage
   const handleLanguageChange = (newLanguage: Language) => {
     setLanguage(newLanguage)
     localStorage.setItem('interview-language', newLanguage)
+  }
+
+  // 处理设置变更
+  const handleSettingsChange = (settings: { baseURL: string; apiKey: string }) => {
+    setUserSettings(settings)
   }
   
   // 快捷回复选项
@@ -143,6 +171,35 @@ export default function InterviewAssistant() {
   const handleFilesUploaded = (newContext: typeof context) => {
     setContext(newContext)
     setShowUpload(false)
+  }
+
+  // 重新发送最后一条消息
+  const handleRetryLastMessage = async () => {
+    if (messages.length === 0) return
+    
+    // 找到最后一条用户消息
+    const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user')
+    if (!lastUserMessage) return
+    
+    // 移除最后一条助手消息（如果有的话，通常是错误消息）
+    const messagesToKeep = messages.filter((msg, index) => {
+      if (msg.role === 'assistant' && index === messages.length - 1) {
+        return false // 移除最后一条助手消息
+      }
+      return true
+    })
+    
+    // 重新发送最后一条用户消息
+    try {
+      const content = lastUserMessage.content || 
+        (lastUserMessage.parts?.[0] && 'text' in lastUserMessage.parts[0] ? lastUserMessage.parts[0].text : '')
+      await append({
+        role: 'user',
+        content: content || ''
+      })
+    } catch (error) {
+      console.error('Retry failed:', error)
+    }
   }
 
   const handleEvaluate = async () => {
@@ -227,6 +284,11 @@ export default function InterviewAssistant() {
               <BarChart3 className="w-4 h-4 mr-2" />
               {evaluating ? t(language, 'main.evaluating') : t(language, 'main.interviewEvaluation')}
             </Button>
+
+            <SettingsDialog 
+              language={language} 
+              onSettingsChange={handleSettingsChange}
+            />
           </div>
         </div>
 
@@ -328,6 +390,40 @@ export default function InterviewAssistant() {
                   </div>
                 </div>
               )}
+              
+              {error && (
+                <div className="text-left mb-6">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="w-8 h-8 mt-1 flex-shrink-0">
+                      <AvatarImage src="/placeholder.svg?height=32&width=32" />
+                      <AvatarFallback>AI</AvatarFallback>
+                    </Avatar>
+                    <div className="bg-red-50 border border-red-200 shadow-sm p-4 rounded-lg w-full">
+                      <div className="text-red-800">
+                        <div className="font-medium mb-2 flex items-center justify-between">
+                          <span>{t(language, 'error.title')}</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRetryLastMessage}
+                            disabled={isLoading}
+                            className="h-7 px-2 text-xs"
+                          >
+                            <RefreshCw className="w-3 h-3 mr-1" />
+                            {t(language, 'error.retry')}
+                          </Button>
+                        </div>
+                        <div className="text-sm">
+                          {error.message || t(language, 'error.defaultMessage')}
+                        </div>
+                        <div className="text-xs text-red-600 mt-2">
+                          {t(language, 'error.code')}: {(error as any).status || 'unknown'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </ScrollArea>
           </CardContent>
 
@@ -391,6 +487,8 @@ export default function InterviewAssistant() {
           </DialogContent>
         </Dialog>
       </div>
+      
+      <Toaster position="top-right" />
     </div>
   )
 }

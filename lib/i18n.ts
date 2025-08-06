@@ -146,6 +146,13 @@ export const translations = {
       adviceType: '建议类型',
       communication: '沟通',
       advice: '建议'
+    },
+    // 错误处理
+    error: {
+      title: '出现错误',
+      retry: '重试',
+      defaultMessage: '聊天服务暂时不可用，请稍后重试',
+      code: '错误代码'
     }
   },
   en: {
@@ -295,6 +302,13 @@ Please communicate in English.`,
       adviceType: 'Advice Type',
       communication: 'Communication',
       advice: 'Advice'
+    },
+    // Error handling
+    error: {
+      title: 'An error occurred',
+      retry: 'Retry',
+      defaultMessage: 'Chat service is temporarily unavailable, please try again later',
+      code: 'Error code'
     }
   }
 }

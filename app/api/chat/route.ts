@@ -1,19 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createOpenAI } from '@ai-sdk/openai';
-import { streamText } from 'ai';
-import { interviewAgent } from '@/lib/mastra';
+import { interviewAgent, createUserAI } from '@/lib/mastra';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, context, language = 'zh' } = await req.json();
+    const { messages, context, language = 'zh', userSettings } = await req.json();
+    
+    // 添加请求日志
+    console.log('Chat API request received:', {
+      messageCount: messages?.length,
+      hasContext: !!context,
+      language,
+      lastMessage: messages?.[messages.length - 1]
+    });
+
     // 获取最后一条用户消息
     const lastMessage = messages[messages.length - 1];
     if (!lastMessage || lastMessage.role !== 'user') {
+      console.error('No valid user message found:', { messages });
       return NextResponse.json(
         { error: 'No user message found' },
+        { status: 400 }
+      );
+    }
+
+    // 验证消息内容
+    const userMessageText = lastMessage.content || lastMessage.parts?.[0]?.text;
+    if (!userMessageText || userMessageText.trim() === '') {
+      console.error('Empty user message:', { lastMessage });
+      return NextResponse.json(
+        { error: 'Empty user message' },
         { status: 400 }
       );
     }
@@ -51,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 构建用户消息，如果用户要求生成问题且有题库内容，则自动调用题库生成工具
-    let userMessage = lastMessage.parts[0].text;
+    let userMessage = userMessageText;
 
     // 检查是否是请求生成面试题的消息
     const isRequestingQuestions = /(生成|出|给|提供|问).*(问题|面试题|题目)/.test(userMessage) ||
@@ -81,6 +99,27 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    console.log('Processing message:', {
+      userMessage,
+      isRequestingQuestions,
+      isStartingInterview,
+      isRequestingNextQuestion,
+      isRequestingHelp,
+      hasInterviewQuestions: !!context?.interviewQuestions
+    });
+
+    const newMessages = [
+      { role: 'system', content: enhancedSystemPrompt },
+      ...messages.map((msg: any) => {
+        const content = msg.parts?.[0]?.text || msg.content || '';
+        if (!content) {
+          console.warn('Empty message content found:', { msg });
+        }
+        return { role: msg.role, content };
+      }).filter((msg: any) => msg.content && msg.content.trim() !== ''),
+      { role: 'user', content: userMessage }
+    ];
+
     if ((isRequestingQuestions || isRequestingNextQuestion || isStartingInterview) && context?.interviewQuestions) {
       // 根据不同的请求类型生成不同的提示
       let prompt = '';
@@ -92,37 +131,154 @@ export async function POST(req: NextRequest) {
         prompt = `请基于以下题库内容生成面试问题：${context.interviewQuestions}`;
       }
 
-      const result = await interviewAgent.stream([
-        { role: 'system', content: enhancedSystemPrompt },
-        { role: 'user', content: prompt }
-      ]);
-      return result.toTextStreamResponse();
+      console.log('Generating question from bank with prompt:', prompt);
+
+      try {
+        // 如果用户提供了设置，创建新的AI实例
+        let agentToUse = interviewAgent;
+        if (userSettings?.apiKey) {
+          const userAI = createUserAI(userSettings);
+          const userModel = userAI('gpt-4o-mini');
+          
+          // 创建使用用户API配置的agent
+          const { Agent } = await import('@mastra/core');
+          agentToUse = new Agent({
+            name: 'interview_assistant',
+            description: '专业的面试助手，能够生成问题、评估答案、提供建议',
+            instructions: interviewAgent.instructions,
+            model: userModel,
+            tools: interviewAgent.tools,
+          });
+        }
+
+        const result = await agentToUse.stream(newMessages);
+        
+        console.log('Question generation successful');
+        return result.toTextStreamResponse();
+      } catch (error) {
+        console.error('Question generation failed:', error);
+        return NextResponse.json(
+          { error: 'Failed to generate question', details: error instanceof Error ? error.message : 'Unknown error' },
+          { status: 500 }
+        );
+      }
     }
 
     // 如果是请求帮助，提供更直接的指导
     if (isRequestingHelp) {
-      const result = await interviewAgent.stream([
-        { role: 'system', content: enhancedSystemPrompt },
-        { role: 'user', content: `用户请求帮助：${userMessage}。请提供具体的指导和建议，帮助用户更好地回答问题。` }
-      ]);
-      return result.toTextStreamResponse();
+      console.log('Providing help for user request');
+      try {
+        // 构建完整的消息历史，确保AI能理解上下文
+        const helpMessages = [
+          { role: 'system', content: enhancedSystemPrompt },
+          ...messages.map((msg: any) => {
+            const content = msg.parts?.[0]?.text || msg.content || '';
+            if (!content) {
+              console.warn('Empty message content found:', { msg });
+            }
+            return { role: msg.role, content };
+          }).filter((msg: any) => msg.content && msg.content.trim() !== ''),
+          { role: 'user', content: userMessage }
+        ];
+
+        // 如果用户提供了设置，创建新的AI实例
+        let agentToUse = interviewAgent;
+        if (userSettings?.apiKey) {
+          const userAI = createUserAI(userSettings);
+          const userModel = userAI('gpt-4o-mini');
+          
+          // 创建使用用户API配置的agent
+          const { Agent } = await import('@mastra/core');
+          agentToUse = new Agent({
+            name: 'interview_assistant',
+            description: '专业的面试助手，能够生成问题、评估答案、提供建议',
+            instructions: interviewAgent.instructions,
+            model: userModel,
+            tools: interviewAgent.tools,
+          });
+        }
+
+        const result = await agentToUse.stream(helpMessages);
+        
+        console.log('Help response generated successfully');
+        return result.toTextStreamResponse();
+      } catch (error) {
+        console.error('Help generation failed:', error);
+        return NextResponse.json(
+          { error: 'Failed to provide help', details: error instanceof Error ? error.message : 'Unknown error' },
+          { status: 500 }
+        );
+      }
     }
 
     // 使用 Mastra Agent 进行流式响应
-    const newMessages = [
-      { role: 'system', content: enhancedSystemPrompt },
-      ...messages.map((msg: any) => ({ role: msg.role, content: msg.parts[0].text })),
-      { role: 'user', content: userMessage }
-    ]
 
-    const result = await interviewAgent.stream(newMessages);
+    console.log('Sending messages to interview agent:', {
+      messageCount: newMessages.length,
+      systemPromptLength: enhancedSystemPrompt.length,
+      userMessageLength: userMessage.length
+    });
 
-    return result.toTextStreamResponse();
+    try {
+      // 如果用户提供了设置，创建新的AI实例
+      let agentToUse = interviewAgent;
+      if (userSettings?.apiKey) {
+        const userAI = createUserAI(userSettings);
+        const userModel = userAI('gpt-4o-mini');
+        
+        // 创建使用用户API配置的agent
+        const { Agent } = await import('@mastra/core');
+        agentToUse = new Agent({
+          name: 'interview_assistant',
+          description: '专业的面试助手，能够生成问题、评估答案、提供建议',
+          instructions: interviewAgent.instructions,
+          model: userModel,
+          tools: interviewAgent.tools,
+        });
+      }
+
+      const result = await agentToUse.stream(newMessages);
+      
+      console.log('Interview agent response generated successfully');
+      return result.toTextStreamResponse();
+    } catch (error) {
+      console.error('Interview agent failed:', error);
+      
+      // 提供更友好的错误信息
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('API key') || errorMessage.includes('authentication')) {
+        return NextResponse.json(
+          { error: 'API configuration error. Please check your OpenAI API key.' },
+          { status: 500 }
+        );
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('network')) {
+        return NextResponse.json(
+          { error: 'Network timeout. Please try again.' },
+          { status: 500 }
+        );
+      } else {
+        return NextResponse.json(
+          { error: 'Failed to generate response', details: errorMessage },
+          { status: 500 }
+        );
+      }
+    }
 
   } catch (error) {
     console.error('Chat API error:', error);
+    
+    // 提供更详细的错误信息
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('Error details:', { errorMessage, errorStack });
+    
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Internal server error', 
+        details: errorMessage,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }
