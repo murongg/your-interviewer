@@ -1,18 +1,20 @@
 'use client'
 
 import { useChat } from '@ai-sdk/react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { HelpCircle, MessageSquare, Lightbulb, RefreshCw, Upload, Settings, BarChart3 } from 'lucide-react'
+import { HelpCircle, MessageSquare, Lightbulb, RefreshCw, Upload, Settings, BarChart3, Sparkles } from 'lucide-react'
 import { FileUpload } from '@/components/file-upload'
 import { EvaluationReport } from '@/components/evaluation-report'
 import { LanguageSwitcher } from '@/components/language-switcher' // 导入新的 LanguageSwitcher
+
 import { Language, t } from '@/lib/i18n'
+import { TextStreamChatTransport } from 'ai'
 
 export default function InterviewAssistant() {
   const [language, setLanguage] = useState<Language>('zh')
@@ -21,15 +23,19 @@ export default function InterviewAssistant() {
     resume?: string
     jobDescription?: string
   }>({})
-  
-  const { messages, append, isLoading } = useChat({
-    api: '/api/chat',
-    body: { context, language }
+
+  const { messages, sendMessage, status } = useChat({
+    transport: new TextStreamChatTransport({
+      api: '/api/chat',
+      body: { context, language }
+    }),
   })
-  
+  const isLoading = useMemo(() => status === 'streaming', [status])
+
   const [inputValue, setInputValue] = useState('')
   const [showUpload, setShowUpload] = useState(false)
   const [showEvaluation, setShowEvaluation] = useState(false)
+  const [showMastra, setShowMastra] = useState(false)
   const [evaluation, setEvaluation] = useState(null)
   const [evaluating, setEvaluating] = useState(false)
 
@@ -86,10 +92,7 @@ export default function InterviewAssistant() {
     const message = inputValue.trim()
     setInputValue('')
     
-    await append({
-      role: 'user',
-      content: message
-    })
+    await sendMessage({ text: message })
   }
 
   const handleFilesUploaded = (newContext: typeof context) => {
@@ -172,6 +175,15 @@ export default function InterviewAssistant() {
 
             <Button 
               variant="outline" 
+              size="sm"
+              onClick={() => window.open('/mastra', '_blank')}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Mastra AI 功能
+            </Button>
+
+            <Button 
+              variant="outline" 
               size="sm" 
               onClick={handleEvaluate}
               disabled={!hasMessages || evaluating}
@@ -231,7 +243,11 @@ export default function InterviewAssistant() {
                           ? 'bg-blue-500 text-white ml-auto' 
                           : 'bg-white border shadow-sm'
                       }`}>
-                        <div className="whitespace-pre-wrap">{message.content}</div>
+                        <div className="whitespace-pre-wrap">
+                          {message.parts?.map((part, index) => 
+                            part.type === 'text' ? part.text : ''
+                          ).join('')}
+                        </div>
                       </div>
                       <div className={`text-xs text-gray-500 mt-1 ${
                         message.role === 'user' ? 'text-right' : 'text-left'

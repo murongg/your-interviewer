@@ -14,9 +14,13 @@ import { EvaluationReport } from '@/components/evaluation-report'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { Language, t } from '@/lib/i18n'
 
-export default function InterviewAssistant({ params }: { params: { lang: Language } }) {
-  const { lang: language } = params // 从路由参数获取当前语言
+export default async function InterviewAssistant({ params }: { params: Promise<{ lang: Language }> }) {
+  const { lang: language } = await params // 从路由参数获取当前语言
   
+  return <InterviewAssistantClient language={language} />
+}
+
+function InterviewAssistantClient({ language }: { language: Language }) {
   const [context, setContext] = useState<{
     interviewQuestions?: string
     resume?: string

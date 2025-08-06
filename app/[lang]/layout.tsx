@@ -10,18 +10,23 @@ export const metadata: Metadata = {
 };
 
 export async function generateStaticParams() {
-  return [{ lang: 'zh' }, { lang: 'en' }];
+  return [
+    { lang: 'zh' },
+    { lang: 'en' }
+  ];
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
   params,
 }: Readonly<{
   children: React.ReactNode;
-  params: { lang: string };
+  params: Promise<{ lang: string }>;
 }>) {
+  const { lang } = await params;
+  
   return (
-    <html lang={params.lang}>
+    <html lang={lang}>
       <body className={inter.className}>{children}</body>
     </html>
   );

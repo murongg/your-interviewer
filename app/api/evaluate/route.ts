@@ -1,4 +1,4 @@
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { t } from '@/lib/i18n';
@@ -6,6 +6,13 @@ import { t } from '@/lib/i18n';
 export async function POST(req: Request) {
   try {
     const { messages, context, language = 'zh' } = await req.json();
+
+    // 创建 AI 模型实例
+    const ai = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: process.env.OPENAI_BASE_URL,
+    });
+    const aiModel = ai('gpt-4o');
 
     // 定义评分结构
     const evaluationSchema = z.object({
@@ -88,8 +95,9 @@ ${messages.map((msg: any) => `${msg.role === 'user' ? '面试者' : '面试官'}
 请提供具体的评分、反馈建议和录用推荐。`;
     }
 
+    // 使用结构化评估
     const result = await generateObject({
-      model: openai('gpt-4o'),
+      model: aiModel,
       schema: evaluationSchema,
       prompt: evaluationPrompt,
     });
