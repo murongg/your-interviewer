@@ -87,7 +87,8 @@ export function SettingsDialog({ language, onSettingsChange }: SettingsDialogPro
         },
         body: JSON.stringify({
           baseURL: settings.baseURL,
-          apiKey: settings.apiKey
+          apiKey: settings.apiKey,
+          model: settings.model || 'gpt-4o-mini'
         })
       })
 
