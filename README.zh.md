@@ -39,8 +39,8 @@ AI面试助手是一个智能面试准备平台，通过AI驱动的模拟面试�
 
 1. **克隆仓库**
    ```bash
-   git clone https://github.com/yourusername/interview-assistant.git
-   cd interview-assistant
+   git clone https://github.com/murongg/your-interviewer.git
+   cd your-interviewer
    ```
 
 2. **安装依赖**

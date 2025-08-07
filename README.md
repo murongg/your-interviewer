@@ -39,8 +39,8 @@ AI Interview Assistant is an intelligent interview preparation platform that hel
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/interview-assistant.git
-   cd interview-assistant
+   git clone https://github.com/murongg/your-interviewer.git
+   cd your-interviewer
    ```
 
 2. **Install dependencies**
