@@ -1,5 +1,6 @@
 {
   "name": "interview-assistant",
+  "description": "Interview Assistant is a tool that helps you prepare for your interviews.",
   "version": "0.1.0",
   "private": true,
   "scripts": {
