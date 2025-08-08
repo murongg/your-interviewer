@@ -38,8 +38,14 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
   const [uploading, setUploading] = useState<string | null>(null)
 
   const handleFileUpload = async (file: File, type: string) => {
+    // 前置校验：仅支持 Markdown 文件
+    if (!file.name.toLowerCase().endsWith('.md')) {
+      alert(t(language, 'fileUpload.onlyMarkdown'))
+      return
+    }
+
     setUploading(type)
-    
+
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -51,7 +57,13 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
       })
 
       if (!response.ok) {
-        throw new Error(t(language, 'fileUpload.uploadFailed'))
+        // 如果服务端返回错误，尝试读取具体错误信息
+        try {
+          const err = await response.json()
+          throw new Error(err?.error || t(language, 'fileUpload.uploadFailed'))
+        } catch (_) {
+          throw new Error(t(language, 'fileUpload.uploadFailed'))
+        }
       }
 
       const result = await response.json()
@@ -234,7 +246,7 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
               title={t(language, 'fileUpload.interviewQuestions')}
               description={t(language, 'fileUpload.interviewQuestionsDesc')}
               icon={FileText}
-              accept=".pdf,.md,.txt,.doc,.docx"
+              accept=".md"
             />
           </div>
         </TabsContent>
@@ -245,7 +257,7 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
             title={t(language, 'fileUpload.resume')}
             description={t(language, 'fileUpload.resumeDesc')}
             icon={User}
-            accept=".pdf,.md,.txt,.doc,.docx"
+            accept=".md"
           />
         </TabsContent>
         
@@ -255,7 +267,7 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
             title={t(language, 'fileUpload.jobDescription')}
             description={t(language, 'fileUpload.jobDescriptionDesc')}
             icon={Briefcase}
-            accept=".pdf,.md,.txt,.doc,.docx"
+            accept=".md"
           />
         </TabsContent>
 
@@ -265,7 +277,7 @@ export function FileUpload({ language, onFilesUploaded }: FileUploadProps) {
             title={t(language, 'fileUpload.knowledgeBase')}
             description={t(language, 'fileUpload.knowledgeBaseDesc')}
             icon={FileCode}
-            accept=".md,.txt,.pdf"
+            accept=".md"
           />
         </TabsContent>
       </Tabs>

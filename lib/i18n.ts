@@ -58,16 +58,17 @@ export const translations = {
       resume: '个人简历',
       jobDescription: '职位描述',
       knowledgeBase: '知识库',
-      interviewQuestionsDesc: '上传包含面试题目的PDF或Markdown文件',
-      resumeDesc: '上传你的简历，AI将根据简历内容提出针对性问题',
-      jobDescriptionDesc: '上传目标职位的JD，AI将根据职位要求进行面试',
-      knowledgeBaseDesc: '上传技术文档、知识库等Markdown文件，AI将基于这些内容进行智能问答',
+      interviewQuestionsDesc: '上传 Markdown 题库文件（仅支持 .md）',
+      resumeDesc: '上传 Markdown 简历文件（仅支持 .md）',
+      jobDescriptionDesc: '上传 Markdown JD 文件（仅支持 .md）',
+      knowledgeBaseDesc: '上传 Markdown 技术文档/知识库文件（仅支持 .md）',
       clickToUpload: '点击上传文件',
       uploading: '上传中...',
       uploadedFiles: '已上传文件：',
       noFileFound: '没有找到文件',
       uploadFailed: '文件上传失败',
-      uploadSuccess: '文件上传成功'
+      uploadSuccess: '文件上传成功',
+      onlyMarkdown: '仅支持上传 Markdown (.md) 文件'
     },
     // 评估报告
     evaluation: {
@@ -357,16 +358,17 @@ export const translations = {
       resume: 'Resume',
       jobDescription: 'Job Description',
       knowledgeBase: 'Knowledge Base',
-      interviewQuestionsDesc: 'Upload PDF or Markdown files containing interview questions',
-      resumeDesc: 'Upload your resume, AI will ask targeted questions based on your resume',
-      jobDescriptionDesc: 'Upload target job description, AI will conduct interviews based on job requirements',
-      knowledgeBaseDesc: 'Upload technical documentation, knowledge base and other Markdown files, AI will conduct intelligent Q&A based on these contents',
+      interviewQuestionsDesc: 'Upload Markdown question bank file (.md only)',
+      resumeDesc: 'Upload your resume as a Markdown file (.md only)',
+      jobDescriptionDesc: 'Upload job description as a Markdown file (.md only)',
+      knowledgeBaseDesc: 'Upload technical documentation/knowledge base in Markdown (.md only)',
       clickToUpload: 'Click to upload file',
       uploading: 'Uploading...',
       uploadedFiles: 'Uploaded files:',
       noFileFound: 'No file found',
       uploadFailed: 'File upload failed',
-      uploadSuccess: 'File uploaded successfully'
+      uploadSuccess: 'File uploaded successfully',
+      onlyMarkdown: 'Only Markdown (.md) files are supported'
     },
     // Evaluation report
     evaluation: {

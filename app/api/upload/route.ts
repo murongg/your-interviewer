@@ -63,35 +63,24 @@ export async function POST(request: NextRequest) {
     const buffer = await file.arrayBuffer()
     const content = new TextDecoder().decode(buffer)
 
-    // 根据文件类型处理内容
-    let processedContent = content
-    let fileType = 'txt'
+    // 仅允许 Markdown 文件
+    if (!file.name.toLowerCase().endsWith('.md')) {
+      return NextResponse.json({ error: '仅支持上传 Markdown (.md) 文件' }, { status: 400 })
+    }
 
-    if (file.name.endsWith('.pdf')) {
-      // 这里可以集成PDF解析库，暂时返回提示
-      processedContent = '已上传PDF文件，内容解析功能开发中...'
-      fileType = 'pdf'
-    } else if (file.name.endsWith('.md')) {
-      // 处理 Markdown 文件
-      processedContent = parseMarkdown(content)
-      fileType = 'markdown'
-      
-      // 如果是知识库文件，进行 RAG 处理
-      if (type === 'knowledgeBase') {
-        processedContent = await processKnowledgeBase(processedContent, file.name, 'en')
-      }
-    } else if (file.name.endsWith('.txt')) {
-      fileType = 'text'
-    } else if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
-      // 这里可以集成 Word 文档解析库
-      processedContent = '已上传 Word 文档，内容解析功能开发中...'
-      fileType = 'word'
+    // 处理 Markdown 文件
+    let processedContent = parseMarkdown(content)
+    let fileType = 'markdown'
+
+    // 如果是知识库文件，进行 RAG 处理
+    if (type === 'knowledgeBase') {
+      processedContent = await processKnowledgeBase(processedContent, file.name, 'en')
     }
 
     return NextResponse.json({
       success: true,
       fileName: file.name,
-      fileType: type,
+      fileType: fileType,
       content: processedContent,
       size: file.size,
       type: type
