@@ -37,7 +37,9 @@ export const translations = {
       inputPlaceholder: '输入你的回答或问题...',
       quickReplies: '快捷回复：',
       tip: '💡 提示：面试结束后点击"面试评分"获得专业评估报告',
-      personalizedContent: '已配置个性化内容'
+      personalizedContent: '已配置个性化内容',
+      voiceInput: '语音输入',
+      voiceOutput: '语音播放'
     },
     // 快捷回复
     quickReplies: {
@@ -337,7 +339,9 @@ export const translations = {
       inputPlaceholder: 'Enter your answer or question...',
       quickReplies: 'Quick Replies:',
       tip: '💡 Tip: Click "Interview Evaluation" after the interview to get a professional assessment report',
-      personalizedContent: 'Personalized content configured'
+      personalizedContent: 'Personalized content configured',
+      voiceInput: 'Voice Input',
+      voiceOutput: 'Voice Output'
     },
     // Quick replies
     quickReplies: {

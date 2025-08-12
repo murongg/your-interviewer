@@ -14,6 +14,7 @@ import { EvaluationReport } from '@/components/evaluation-report'
 import { LanguageSwitcher } from '@/components/language-switcher' // 导入新的 LanguageSwitcher
 import { MarkdownMessage } from '@/components/markdown-message'
 import { SettingsDialog } from '@/components/settings-dialog'
+import { VoiceInput } from '@/components/voice-input'
 import { Toaster } from 'sonner'
 
 import { Language, t } from '@/lib/i18n'
@@ -156,6 +157,10 @@ export default function InterviewAssistant() {
     setInputValue(e.target.value)
   }
 
+  const handleVoiceTranscript = (text: string) => {
+    setInputValue(text)
+  }
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!inputValue.trim() || isLoading) return
@@ -288,6 +293,8 @@ export default function InterviewAssistant() {
               <BarChart3 className="w-4 h-4 mr-2" />
               {evaluating ? t(language, 'main.evaluating') : t(language, 'main.interviewEvaluation')}
             </Button>
+
+
 
             <SettingsDialog 
               language={language} 
@@ -457,13 +464,23 @@ export default function InterviewAssistant() {
 
             {/* 输入框 */}
             <form onSubmit={onSubmit} className="flex w-full gap-2">
-              <Input
-                value={inputValue}
-                onChange={handleInputChange}
-                placeholder={t(language, 'main.inputPlaceholder')}
-                className="flex-1"
-                disabled={isLoading}
-              />
+              <div className="flex-1 relative">
+                <Input
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  placeholder={t(language, 'main.inputPlaceholder')}
+                  className="w-full pr-20"
+                  disabled={isLoading}
+                />
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                  <VoiceInput
+                    onTranscript={handleVoiceTranscript}
+                    language={language}
+                    disabled={isLoading}
+                    className="scale-75"
+                  />
+                </div>
+              </div>
               <Button type="submit" disabled={isLoading || !inputValue.trim()}>
                 {t(language, 'common.send')}
               </Button>
