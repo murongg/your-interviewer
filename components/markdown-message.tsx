@@ -9,7 +9,7 @@ interface MarkdownMessageProps {
 
 export function MarkdownMessage({ content, className = '' }: MarkdownMessageProps) {
   return (
-    <div className={`markdown-content ${className}`}>
+    <div className={`markdown-content w-full overflow-x-auto ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

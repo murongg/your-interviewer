@@ -293,6 +293,38 @@ export const translations = {
       communication: '沟通',
       advice: '建议'
     },
+    // 简历生成器
+    resumeGenerator: {
+      title: 'AI简历生成器',
+      subtitle: '上传项目代码，AI自动分析并生成专业简历',
+      uploadProject: '上传项目代码',
+      generateResume: '生成简历',
+      generating: '生成中...',
+      generatedResume: '生成的简历',
+      download: '下载简历',
+      noResumeYet: '还没有生成简历',
+      uploadAndGenerate: '请先上传项目代码并点击生成',
+      uploadFilesFirst: '请先上传项目代码文件',
+      generationFailed: '简历生成失败',
+      uploadedFiles: '已上传的文件'
+    },
+    // 简历文件上传
+    resumeFileUpload: {
+      selectProjectFile: '选择项目压缩文件',
+      supportedFormats: '支持的格式',
+      unsupportedFormat: '不支持的文件格式',
+      uploadFailed: '文件上传失败',
+      extractionFailed: '文件解压失败',
+      uploading: '上传中...',
+      extracting: '解压中...',
+      uploadAndExtract: '上传并解压',
+      extractedFiles: '已解压的文件',
+      howItWorks: '工作原理',
+      step1: '选择项目压缩文件（ZIP、RAR、TAR等）',
+      step2: '上传文件到服务器',
+      step3: '自动解压并分析代码文件',
+      step4: 'AI分析代码并生成简历'
+    },
     // 错误处理
     error: {
       title: '出现错误',
@@ -594,6 +626,36 @@ Please always maintain a professional, friendly, and constructive attitude.`
       adviceType: 'Advice Type',
       communication: 'Communication',
       advice: 'Advice'
+    },
+    // Resume Generator
+    resumeGenerator: {
+      title: 'AI Resume Generator',
+      subtitle: 'Upload project code, AI automatically analyzes and generates professional resume',
+      uploadProject: 'Upload Project Code',
+      generateResume: 'Generate Resume',
+      generating: 'Generating...',
+      generatedResume: 'Generated Resume',
+      download: 'Download Resume',
+      noResumeYet: 'No resume generated yet',
+      uploadAndGenerate: 'Please upload project code first and click generate',
+      uploadFilesFirst: 'Please upload project code files first'
+    },
+    // Resume File Upload
+    resumeFileUpload: {
+      selectProjectFile: 'Select Project Archive File',
+      supportedFormats: 'Supported formats',
+      unsupportedFormat: 'Unsupported file format',
+      uploadFailed: 'File upload failed',
+      extractionFailed: 'File extraction failed',
+      uploading: 'Uploading...',
+      extracting: 'Extracting...',
+      uploadAndExtract: 'Upload and Extract',
+      extractedFiles: 'Extracted Files',
+      howItWorks: 'How it works',
+      step1: 'Select project archive file (ZIP, RAR, TAR, etc.)',
+      step2: 'Upload file to server',
+      step3: 'Automatically extract and analyze code files',
+      step4: 'AI analyzes code and generates resume'
     },
     // Error handling
     error: {

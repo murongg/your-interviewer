@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { HelpCircle, MessageSquare, Lightbulb, RefreshCw, Upload, Settings, BarChart3, Sparkles } from 'lucide-react'
+import { HelpCircle, MessageSquare, Lightbulb, RefreshCw, Upload, Settings, BarChart3, Sparkles, FileCode } from 'lucide-react'
 import { FileUpload } from '@/components/file-upload'
 import { EvaluationReport } from '@/components/evaluation-report'
 import { LanguageSwitcher } from '@/components/language-switcher' // 导入新的 LanguageSwitcher
@@ -292,6 +292,15 @@ export default function InterviewAssistant() {
             >
               <BarChart3 className="w-4 h-4 mr-2" />
               {evaluating ? t(language, 'main.evaluating') : t(language, 'main.interviewEvaluation')}
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href = '/resume-generator'}
+            >
+              <FileCode className="w-4 h-4 mr-2" />
+              {t(language, 'resumeGenerator.title')}
             </Button>
 
 
